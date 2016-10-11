@@ -1,0 +1,570 @@
+
+<html>
+<head>
+<meta charset=utf-8 />
+<title>Telecoms Signal Mapping</title>
+  <link rel="stylesheet" href="cartodb.css" />
+  <script type="text/javascript" src="http://gc.kis.v2.scr.kaspersky-labs.com/B2D56847-FDC0-2541-8D76-CDA93B6BDCDF/main.js" charset="UTF-8"></script>
+  <script src="cartodb.js"></script>
+  <script src='jquery-1.11.0.min.js'></script>
+   <link rel="stylesheet" type="text/css" href="styles.css" media="all" />
+    <link rel="stylesheet" href="iThing.css" type="text/css" />
+    <link rel="stylesheet" href="http://libs.cartocdn.com/cartodb.js/v3/themes/css/cartodb.css" />
+  <style>
+    html, body {width:100%; height:100%; padding: 0; margin: 0;}
+    #map { width: 100%; height:100%; background: black;}
+    #menu { position: absolute; top: 15px; right: 400px; width: 500px; height:60px; background: transparent; z-index:10;}
+    #menu a {
+      margin: 15px 10px 0 0;
+      float: right;
+      vertical-align: baseline;
+      width: 70px;
+      padding: 5px;
+      text-align: center;
+      font: bold 11px "Helvetica",Arial;
+      line-height: normal;
+      color: #555;
+      border-radius: 4px;
+      border: 1px solid #777777;
+      background: #ffffff;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    #menu a.selected {
+      color: #F84F40;
+    }
+
+	  #layer_selector {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        padding: 0;
+      }
+      #layer_selector ul {
+        padding: 0; margin: 0;
+        list-style-type: none;
+      }
+      #layer_selector li {
+        border-bottom: 1px solid #999;
+        padding: 5px 10px;
+        font-family: "Helvetica", Arial;
+        font-size: 13px;
+        color: #444;
+        cursor: auto;
+      }
+      #layer_selector li:hover {
+        background-color: #F0F0F0;
+        cursor: pointer;
+      }
+      #layer_selector li.selected {
+        background-color: #EEE;
+      }
+	  #net_type {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        padding: 0;
+      }
+
+      #net_type ul {
+        padding: 0; margin: 0;
+        list-style-type: none;
+      }
+
+      #net_type li {
+        border-bottom: 1px solid #999;
+        padding: 5px 15px;
+        font-family: "Helvetica", Arial;
+        font-size: 13px;
+        color: #444;
+        cursor: auto;
+      }
+
+      #net_type li:hover {
+        background-color: #F0F0F0;
+        cursor: pointer;
+      }
+
+      #net_type li.selected {
+        background-color: #EEE;
+      }
+
+   	  #signal {
+        position: absolute;
+        top: 85px;
+        left: 10px;
+        padding: 0;
+      }
+
+      #signal li:hover {
+        background-color: #F0F0F0;
+        cursor: pointer;
+      }
+
+      #signal li.selected {
+        background-color: #EEE;
+      }
+
+      #signal ul {
+        padding: 0; margin: 0;
+        list-style-type: none;
+      }
+
+      #signal li {
+        border-bottom: 1px solid #999;
+        padding: 5px 15px;
+        font-family: "Helvetica", Arial;
+        font-size: 13px;
+        color: #444;
+        cursor: auto;
+      }
+
+      #signal li:hover {
+        background-color: #F0F0F0;
+        cursor: pointer;
+      }
+
+      #signal li.selected {
+        background-color: #EEE;
+      }
+
+  </style>
+
+  <script>
+  var map;
+  function init(){
+    // initiate leaflet map
+    map = new L.Map('map', {
+      center: [8.5,-11.9],
+      zoom: 8
+    })
+
+    L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+      attribution: 'Mapbox <a href="http://mapbox.com/about/maps" target="_blank">Terms &amp; Feedback</a>'
+    }).addTo(map);
+
+	var sublayers = [];
+	var previous_area = 'all';
+	var previous_signal = 'all_signal';
+	var previous_net_type = 'all_net_type';
+
+	var sqlQuery = "SELECT dbm_signal_strength,gsm_asu, province_name, network_type, net_name, signal_strength, district_name as district, chiefdom_name as chiefdom, cartodb_id, the_geom, the_geom_webmercator FROM geoserver_getfeature where mcc = 'sl'";
+
+	var query = sqlQuery;
+	var text_replace_area ;
+
+  // create district selector
+  function createSelectorDistrict(layer) {
+	var sql = new cartodb.SQL({ user: 'ehealthafrica' });
+	var $options = $('#layer_selector');
+	var $option_sig = $('#signal li');
+	var $option_net_type = $('#net_type li');
+
+
+	$options.change(function(e) {
+
+	  // get the area of the selected layer
+	  var $li = $(e.target);
+	  var area = $('#layer_selector').find(":selected").val();
+
+
+	  // deselect all and select the clicked one
+	  $options.removeClass('selected');
+	  $li.addClass('selected');
+	  // create query based on data from the layer
+
+	  if(area !== 'all') {
+	  if (previous_area != 'all'){
+	  	text_replace_area = " AND district_name = '" + previous_area + "'";
+	  	query = query.replace(text_replace_area,'');
+	  		  	}
+		query = query + " AND district_name = '" + area + "'";
+	  }
+	  if(area == 'all') {
+	  	text_replace_area = " AND district_name = '" + previous_area + "'";
+	  	query = query.replace(text_replace_area,'');
+	  }
+
+	  // change the query in the layer to update the map
+	  layer.setSQL(query);
+
+	  // update the map view extent
+
+	  	  if (previous_area != area){
+		var queryBounds = sql.getBounds(query).done(function(bounds) {
+				map.fitBounds(bounds);
+				select_zoom = false;
+		});
+	   }
+
+		previous_area = area ;
+
+
+	});
+
+
+  $option_sig.click(function(e) {
+   var $li = $(e.target);
+   var signal = $li.attr('data');
+
+     $option_sig.removeClass('selected');
+	  $li.addClass('selected');
+
+	if (signal != 'all_signal'){
+	  	text_replace_signal = " AND signal_strength = '" + previous_signal + "'";
+	  	query = query.replace(text_replace_signal,'');
+		query = query + " AND signal_strength = '" + signal + "'";
+	  }else{
+	  	text_replace_signal = " AND signal_strength = '" + previous_signal + "'";
+	  	query = query.replace(text_replace_signal,'');
+	  }
+  			layer.setSQL(query);
+
+  	previous_signal = signal ;
+
+
+  });
+
+
+
+  $option_net_type.click(function(e) {
+     var $li = $(e.target);
+     var net_type = $li.attr('data');
+
+     $option_net_type.removeClass('selected');
+	  $li.addClass('selected');
+
+
+	  if (net_type != 'all_net_type'){
+	  	text_replace_net_type = " AND network_type = '" + previous_net_type + "'";
+	  	query = query.replace(text_replace_net_type,'');
+		query = query + " AND network_type = '" + net_type + "'";
+	  }else{
+	  	text_replace_net_type = " AND network_type = '" + previous_net_type + "'";
+	  	query = query.replace(text_replace_net_type,'');
+	  }
+
+
+  	layer.setSQL(query);
+
+  	previous_net_type = net_type ;
+
+
+
+  });
+
+}
+
+  // create choropleth selector
+  function createSelectorChoropleth(layer) {
+	var $options = $('#choropleth_selector li');
+	$options.click(function(e) {
+		  // get the choropleth type
+		  var $li = $(e.target);
+		  var type = $li.attr('data');
+		  // deselect all and select the clicked one
+		  $options.removeClass('selected');
+		  $li.addClass('selected');
+		  // create query based on data from the layer
+		  if(type == 'calls') {
+			layer.set({cartocss: ""
+			})
+		  };
+		  if(type == 'population') {
+			layer.set({cartocss: ""
+			})
+		  };
+		});
+  }
+
+	// create array with the layers
+  var layerSource = {
+	user_name: 'ehealthafrica',
+	type: 'cartodb',
+	sublayers: [{
+	  sql: sqlQuery,
+	  cartocss: "#geoserver_getfeature {polygon-opacity: 0.6;line-color: #FFF;line-width: 0;line-opacity: 1;}#geoserver_getfeature[signal_strength='Excellent           '] {   polygon-fill: #136400;}#geoserver_getfeature[signal_strength='Good                '] {   polygon-fill: #b2df8a;}#geoserver_getfeature[signal_strength='Moderate            '] {   polygon-fill: #5CA2D1;}#geoserver_getfeature[signal_strength='No Service          '] {   polygon-fill: #FF9900;}#geoserver_getfeature[signal_strength='Unlikely Service    '] {  polygon-fill: #FF2900;}#geoserver_getfeature[signal_strength='Very Good           '] {   polygon-fill: #229A00;}"
+        },{
+	  sql: "SELECT * FROM sl_districts",
+	  cartocss: "#sl_districts{  polygon-fill: #FF6600;polygon-opacity: 0;line-color: #FFF;line-width: 2;line-opacity: 1;}#sl_districts::labels {text-name: [district_name];text-face-name: 'DejaVu Sans Book';text-size: 20;text-label-position-tolerance: 10;text-fill: #000;text-halo-fill: #FFF;text-halo-radius: 1.5;text-dy: -10;text-allow-overlap: false;text-placement: point;text-placement-type: simple;}"
+	},{
+	  sql: "SELECT * FROM sl_chiefdoms",
+	  cartocss: "#sl_chiefdoms{polygon-fill: #b5ada7;polygon-opacity: 0;line-color: #FFF;line-width: 0.5;line-opacity: 1;}#sl_chiefdoms::labels {text-name: [chiefdom_name];text-face-name: 'DejaVu Sans Book';text-size: 10;text-label-position-tolerance: 10;text-fill: #000;text-halo-fill: #FFF;text-halo-radius: 1.5;text-dy: -10;text-allow-overlap: false;text-placement: point;text-placement-type: simple;}"
+	}]
+	}
+
+
+
+	cartodb.createLayer(map, layerSource)
+	  .addTo(map)
+	  .on('done', function(layer) {
+
+		for (var i = 0; i < layer.getSubLayerCount(); i++) {
+            sublayers[i] = layer.getSubLayer(i);
+			//alert("Congrats, you added sublayer #" + i + "!");
+		}
+
+		createSelectorDistrict(sublayers[0]);
+
+		createSelectorChoropleth(sublayers[0]);
+
+		cdb.vis.Vis.addInfowindow(map, layer.getSubLayer(0), [ 'province_name','district', 'chiefdom', 'net_name','network_type','signal_strength', 'gsm_asu','dbm_signal_strength'  ])
+
+
+
+		var legendCallType = new cdb.geo.ui.Legend({
+           type: "custom",
+           data: [
+            { name: "Excellent", value: "#136400" },
+            { name: "Very Good", value: "#229A00" },
+            { name: "Good", value: "#b2df8a" },
+            { name: "Moderate", value: "#5CA2D1" },
+            { name: "No Service", value: "#FF9900" },
+            { name: "Unlikely Service", value: "#FF2900" }
+           ]
+		});
+
+		// creating legends and add legend to map
+		var legendIncrease = new cdb.geo.ui.Legend({
+           type: "choropleth",
+           data: [
+           ]
+		});
+		var stackedLegend = new cdb.geo.ui.StackedLegend({
+           legends: [legendCallType]
+         });
+        $('#map').append(stackedLegend.render().el);
+
+	  }).on('error', function() {
+		//log the error
+	  });
+
+
+	//Create call type selector
+	var LayerActions = {
+
+
+	  smart: function(layer){
+
+		if (smart_layer == true){
+			query = query.replace(/ net_name = 'Smart' /g,'');
+			query = query.replace(/\(  OR /g,'(');
+			query = query.replace(/\( OR /g,'(');
+			query = query.replace(/OR \)/g,')');
+			query = query.replace(/\(  AND \)/g,'');
+			query = query.replace(/OR  OR/g,'OR');
+  			$('.button.smart').removeClass('selected');
+  			removelayer == "";
+  			smart_layer = false;
+
+  			numb_butt_select = numb_butt_select - 1 ;
+
+  			if (numb_butt_select == 0){
+				query = query.replace(/ AND \(/g,'');
+				query = query.replace(/\)/g,'');
+  		  	}
+
+  		  	layer.setSQL(query);
+
+  		}else{
+  		if (numb_butt_select == 0){
+  		  	query = query + " AND ( net_name = 'Smart' )";
+  		  	}
+  		  else {
+  		    query = query.replace(/\)/g,' OR ');
+  		    query = query + " net_name = 'Smart' )";
+  		     }
+  			layer.setSQL(query);
+			smart_layer = true ;
+			numb_butt_select = numb_butt_select + 1 ;
+		}
+
+		return smart_layer;
+
+	  },
+	  africell: function(layer){
+
+		if (africell_layer == true){
+			query = query.replace(/ net_name = 'Africell' /g,'');
+			query = query.replace(/\(  OR /g,'(');
+			query = query.replace(/\( OR /g,'(');
+			query = query.replace(/OR \)/g,')');
+			query = query.replace(/\(  AND \)/g,'');
+			query = query.replace(/OR  OR/g,'OR');
+  			$('.button.africell').removeClass('selected');
+  			removelayer == "";
+  			africell_layer = false;
+
+  			numb_butt_select = numb_butt_select - 1 ;
+
+  			if (numb_butt_select == 0){
+				query = query.replace(/ AND \(/g,'');
+				query = query.replace(/\)/g,'');
+  		  	}
+
+  		  	layer.setSQL(query);
+
+  		}else{
+  		if (numb_butt_select == 0){
+  		  	query = query + " AND ( net_name = 'Africell' )";
+  		  	}
+  		  else {
+  		  query = query.replace(/\)/g,' OR ');
+  		  query = query + " net_name = 'Africell' )";
+  		  }
+  			layer.setSQL(query);
+			africell_layer = true ;
+			numb_butt_select = numb_butt_select + 1 ;
+		}
+
+		return africell_layer;
+
+
+	  },
+	  airtel: function(layer){
+
+		if (airtel_layer == true){
+			query = query.replace(/ net_name = 'Airtel' /g,'');
+			query = query.replace(/\(  OR /g,'(');
+			query = query.replace(/\( OR /g,'(');
+			query = query.replace(/OR \)/g,')');
+			query = query.replace(/\(  AND \)/g,'');
+			query = query.replace(/OR  OR/g,'OR');
+  			$('.button.airtel').removeClass('selected');
+  			removelayer == "";
+  			airtel_layer = false;
+
+  			numb_butt_select = numb_butt_select - 1 ;
+
+  			if (numb_butt_select == 0){
+				query = query.replace(/ AND \(/g,'');
+				query = query.replace(/\)/g,'');
+  		  	}
+
+  			layer.setSQL(query);
+
+  		}else{
+  		if (numb_butt_select == 0){
+  		  	query = query + " AND ( net_name = 'Airtel' )";
+  		  	 }
+  		  else {
+		  query = query.replace(/\)/g,' OR ');
+  		  query = query + " net_name = 'Airtel' )";
+  		  }
+  			layer.setSQL(query);
+			airtel_layer = true ;
+			numb_butt_select = numb_butt_select + 1 ;
+		}
+
+		return airtel_layer;
+
+	  }
+
+	}
+	$('.button').click(function() {
+	  $(this).addClass('selected');
+	  LayerActions[$(this).attr('id')](sublayers[0]);
+	});
+
+
+	var removelayer = "";
+	var africell_layer = false;
+	var airtel_layer = false;
+	var smart_layer = false;
+	var numb_butt_select = 0;
+
+	var checkclick = function() {
+  if (africell_layer == true){
+   removelayer = "africell";
+  }
+  if (airtel_layer == true){
+   removelayer = "airtel";
+  }
+  if (smart_layer == true){
+   removelayer = "smart";
+  }
+};
+$('.button').bind( "click", checkclick );
+
+
+  }
+  </script>
+</head>
+<body onload="init()">
+ <table border=0 width="100%" height="90%" celpadding=5>
+  <tr>
+
+  </tr>
+  <tr>
+	<td width="160" rowspan=2 valign=top>
+	<div id="controls" rowspan="2">
+		<div id="layer_selector" class="cartodb-infobox">
+		<div id="Select-Title"><h7>Choose a District</h7></div>
+		<div>
+		<select style="width:140px;" tabindex="2">
+				<option value="all" selected>All</option>
+				<option value="Bo">Bo</option>
+				<option value="Bombali">Bombali</option>
+				<option value="Bonthe">Bonthe</option>
+				<option value="Kailahun">Kailahun</option>
+                <option value="Kambia">Kambia</option>
+				<option value="Kenema">Kenema</option>
+				<option value="Koinadugu">Koinadugu</option>
+				<option value="Kono">Kono</option>
+				<option value="Moyamba">Moyamba</option>
+				<option value="Port Loko">Port Loko</option>
+				<option value="Pujehun">Pujehun</option>
+				<option value="Tonkolili">Tonkolili</option>
+				<option value="Western Area Rural">Western Area Rural</option>
+				<option value="Western Area Urban">Western Area Urban</option>
+		</select>
+
+<br>
+<br>
+		<div id="signal" class="cartodb-infobox">
+		  <ul>
+		  	<li data="all_signal" class="selected">All Signal</li>
+		  	<li data="Excellent">Excellent</li>
+		  	<li data="Very Good">Very Good</li>
+		  	<li data="Good">Good</li>
+			<li data="Moderate">Moderate</li>
+			<li data="No Service">No Service</li>
+			<li data="Unlikely Service">Unlikely Service</li>
+
+
+
+
+		  </ul>
+		</div>
+
+		</div>
+		</div>
+	</div>
+    </td>
+    <td width="" height="100%">
+
+	  <div id='map'></div>
+
+
+		<div id="net_type" class="cartodb-infobox">
+		  <ul>
+		  	<li data="all_net_type" class="selected">All network</li>
+		  	<li data="2G">2G</li>
+			<li data="3G">3G</li>
+			<li data="4G">4G</li>
+		  </ul>
+		</div>
+
+      <div id='menu'>
+		<a href="#smart" id="smart" class="button smart">Smart</a>
+		<a href="#africell" id="africell" class="button africell">Africell</a>
+		<a href="#airtel" id="airtel" class="button airtel">Airtel</a>
+	  </div>
+
+    </script>
+
+	</td>
+  </tr>
+</table>
+</body>
+</html>

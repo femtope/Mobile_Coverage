@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Mobile Coverage Mapping | eHA Africa</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <link href="https://fonts.googleapis.com/css?family=Baloo+Bhaina|Bungee+Shade" rel="stylesheet">
+    <!-- Bootstrap 3.3.5 -->
+    <link rel="stylesheet" href="bootstrap/css/bootstrap.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+    <!-- Ionicons -->
+    <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon.png">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="css/AdminLTE.css">
+    <link rel="stylesheet" href="css/skins/skin-blue.css">
+    <link rel="stylesheet" href="plugins/leaflet/leaflet.css">
+    <link rel="stylesheet" href="css/main.css">
+    <link href="bower_components/bootstrap-social/bootstrap-social.css" rel="stylesheet">
+    <link href="bower_components/bootstrap-social/bootstrap-social.less" rel="stylesheet">
+     <!-- Marker Cluster -->
+    <link rel="stylesheet" href="plugins/MarkerCluster/MarkerCluster.css">
+    <link rel="stylesheet" href="plugins/MarkerCluster/MarkerCluster.Default.css">
+     <!-- JQuery Slider -->
+    <link rel="stylesheet" href="css/icon.css">
+</head>
+
+
+
+<body class="hold-transition skin-blue layout-top-nav">
+    <!-- Left side column. contains the logo and sidebar -->
+    <div class="wrapper">
+        <aside class="main-sidebar main-sidebar-light sidebar_edit">
+            <section class="sidebar">
+            <div class="text-center">
+                <br>
+                <h1>Mobile Coverage</h1>
+            </div>
+
+<!--            <div class="alert"></div>-->
+             <div class="alert alert-info sideColor">
+                <h4 class="info-box-number white"><i class="icon fa fa-globe fa-1x"></i>State</h4>
+                      <div class="form-group-sm">
+                        <select class="form-control">
+                            <option value="Borno">Borno</option>
+                        </select>
+                      </div>
+
+
+                 <!--LGAs DropDown-->
+                 <br>
+                 <h4><i class="icon fa fa-globe fa-1x"></i>Local Government Areas</h4>
+                      <div class="form-group-sm">
+                        <select id="lga_scope" onchange="getAdminLayers(); triggerUiUpdate(); showPrefecture();" class="form-control">
+                            <option value="">All</option>
+                            <option value="Abadam" class="abadam">Abadam</option>
+                            <option value="Askira-Uba" class="askira-uba">Askira-Uba</option>
+                            <option value="Bama" class="bama">Bama</option>
+                            <option value="Bayo" class="bayo">Bayo</option>
+                            <option value="Biu" class="biu">Biu</option>
+                            <option value="Chibok" class="chibok">Chibok</option>
+                            <option value="Damboa" class="damboa">Damboa</option>
+                            <option value="Dikwa" class="dikwa">Dikwa</option>
+                            <option value="Gubio" class="gubio">Gubio</option>
+                            <option value="Guzamala" class="guzamala">Guzamala</option>
+                            <option value="Gwoza" class="gwoza">Gwoza</option>
+                            <option value="Hawul" class="hawul">Hawul</option>
+                            <option value="Jere" class="jere">Jere</option>
+                            <option value="Kaga" class="kaga">Kaga</option>
+                            <option value="Kala-Balge" class="kala-balge">Kala-Balge</option>
+                            <option value="Konduga" class="konduga">Konduga</option>
+                            <option value="Kukawa" class="kukawa">Kukawa</option>
+                            <option value="Kwaya Kusar" class="kwaya">Kwaya Kusar</option>
+                            <option value="Mafa" class="mafa">Mafa</option>
+                            <option value="Magumeri" class="magumeri">Magumeri</option>
+                            <option value="Maiduguri" class="maiduguri">Maiduguri</option>
+                            <option value="Marte" class="marte">Marte</option>
+                            <option value="Mobbar" class="mobbar">Mobbar</option>
+                            <option value="Monguno" class="monguno">Monguno</option>
+                            <option value="Ngala" class="ngala">Ngala</option>
+                            <option value="Nganzai" class="nganzai">Nganzai</option>
+                            <option value="Shani" class="shani">Shani</option>
+                        </select>
+                    </div>
+                 <!--Network Name DropDown-->
+                 <br>
+                 <h4><i class="icon fa fa-mobile fa-2x"></i>Network Name</h4>
+                      <div class="form-group-sm">
+                        <select id="net_name" onchange="getAdminLayers(); triggerUiUpdate(); showPrefecture();" class="form-control">
+                            <option value="">All</option>
+                            <option value="MTN" class="mtn" id="">MTN</option>
+                            <option value="Airtel" class="airtel">Airtel</option>
+                            <option value="Etisalat" class="etisalat">Etisalat</option>
+                        </select>
+                    </div>
+                 <!--Network Tech  DropDown-->
+                 <br>
+                 <h4><i class="icon fa fa-signal fa-1x"></i>Network Technology</h4>
+                      <div class="form-group-sm">
+                        <select id="avlb_net" onchange="getAdminLayers(); triggerUiUpdate(); showPrefecture();" class="form-control">
+                            <option value="">All</option>
+                            <option value="2G" class="2g" id="">2G</option>
+                            <option value="2G Enhanced" class="2genhanced">2G Enhanced</option>
+                            <option value="3G" class="3g">3G</option>
+                            <option value="4G" class="4g">4G</option>
+                        </select>
+                    </div>
+                 <br>
+                 <!--Signal Strength DropDown-->
+                 <br>
+                 <h4><i class="icon fa fa-signal fa-1x"></i>Signal Strength</h4>
+                      <div class="form-group-sm">
+                        <select id="avg_signal" onchange="getAdminLayers(); triggerUiUpdate(); showPrefecture();" class="form-control">
+                            <option value="">All</option>
+                            <option value="Excellent" class="excel" id="">Excellent</option>
+                            <option value="Good" class="good">Good</option>
+                            <option value="Fair" class="fair">Fair</option>
+                            <option value="Poor" class="poor">Poor</option>
+                            <option value="Unknown" class="unknown">Unknown</option>
+                            <option value="No Data" class="no_data">No Data</option>
+                        </select>
+                    </div>
+<!--
+                 <h4 id="ward_id" readonly style="visibility:hidden"><i class="icon fa fa-globe fa-1x"></i>Ward</h4>
+                      <div id="ward_id1" class="form-group-sm" readonly style="visibility:hidden">
+                        <select id="ward_scope" onchange="getAdminLayers(); triggerUiUpdate();" class="form-control">
+                            //Ward for different local govt which will be filter on selection of the LGAs
+                        </select>
+                    </div>
+-->
+            </div>
+          </section>
+            <div class="logo_pad">
+                    <img  src="image/coat1.png" height="85" width="120">
+            </div>
+
+        </aside>
+        <section>
+
+                <div class="col-md-12" id="map">
+
+                </div>
+                <div>
+                  <h7 class="red text-center"><i class="icon fa fa-spinner fa-5x" id="spinposition"></i></h7>
+                </div>
+
+
+            <div id="detailPosition">
+              <div class="alert sideColor">
+                    <div class="box box-primary box-solid">
+                        <div class="box-header with-border">
+                            <h3 class="box-title">Health Facility Details</h3>
+                            <div class="box-tools pull-right">
+                                <button class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i></button>
+                            </div>
+                        </div>
+                        <div id="infoContent" class="box-body black info-box">
+                            <p>Click on any of the points to see <br>full information here... </p>
+                        </div>
+                    </div>
+                </div>
+                </div>
+
+        <div class="col-md-12  border">
+            <ul class="social-network social-circle">
+                <li><a target="_blank" href="https://www.facebook.com/BrianAlex1251" class="icoFacebook" title="Facebook"><i class="fa fa-facebook"></i></a></li>
+                <li><a target="_blank" href="http://www.twitter.com/femtope" class="icoTwitter" title="Twitter"><i class="fa fa-twitter"></i></a></li>
+                <li><a target="_blank" href="https://plus.google.com/u/0/115849015961200482106" class="icoGoogle" title="Google +"><i class="fa fa-google-plus"></i></a></li>
+                <li><a target="_blank" href="https://www.linkedin.com/in/oluwafemi-ooju-0061b627" class="icoLinkedin" title="Linkedin"><i class="fa fa-linkedin"></i></a></li>
+
+            </ul>
+        </div>
+        </section>
+        <script src="plugins/jQuery/jQuery-2.1.4.min.js"></script>
+        <!-- Bootstrap 3.3.5 -->
+        <script src="bootstrap/js/bootstrap.min.js"></script>
+        <!-- AdminLTE App -->
+        <script src="js/app.min.js"></script>
+        <script src="plugins/leaflet/leaflet.js"></script>
+        <script src="js/main.js"></script>
+        <script src="plugins/MarkerCluster/leaflet.markercluster-src.js"></script>
+        <script src="node_modules/turf/turf.js"></script>
+    </div>
+</body>
+
+</html>
